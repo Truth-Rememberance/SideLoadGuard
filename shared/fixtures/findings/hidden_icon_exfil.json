@@ -1,0 +1,98 @@
+{
+  "schema_version": "1.0",
+  "job_id": "267b02aa-7422-4b9d-b5b3-8c7bb48e1707",
+  "analysis_version": "v1.0",
+  "analysis_status": "ok",
+  "failure_reason": null,
+  "file": {
+    "sha256": "0000000000000000000000000000000000000000000000000000000000000007",
+    "size_bytes": 7345120,
+    "detected_type": "apk",
+    "claimed_filename": "Example-Cloud-Helper.apk"
+  },
+  "app": {
+    "label": "Example Cloud Helper",
+    "package_name": "invalid.example.cloudhelper",
+    "version_name": "1.6",
+    "min_sdk": 21,
+    "target_sdk": 32
+  },
+  "certificate": {
+    "signed": true,
+    "sha256_fingerprints": ["7777777777777777777777777777777777777777777777777777777777777777"],
+    "subject": "CN=Fictional Cloud Helper Publisher",
+    "self_signed": true,
+    "debug_cert": true
+  },
+  "permissions": {
+    "requested": ["android.permission.INTERNET", "android.permission.ACCESS_NETWORK_STATE"],
+    "dangerous": []
+  },
+  "components": {
+    "has_launcher_activity": false,
+    "has_accessibility_service": false,
+    "has_device_admin": false,
+    "has_sms_receiver": false,
+    "requests_install_packages": false,
+    "requests_overlay": false,
+    "embedded_apk_or_dex": false,
+    "dynamic_code_loading": false
+  },
+  "indicators": {
+    "urls": ["https://exfil.example[.]invalid/upload"],
+    "domains": ["exfil.example[.]invalid", "bot.example[.]invalid"],
+    "ip_addresses": [],
+    "cloud_endpoints": ["cloud.example[.]invalid/v1/collect"],
+    "token_hashes": ["aaaaaaaabbbbbbbbccccccccdddddddd00000000111111112222222233333333"]
+  },
+  "rule_hits": [
+    {
+      "rule_id": "SG-HID-001",
+      "category": "HID",
+      "severity": "medium",
+      "reason_code": "HIDDEN_LAUNCHER_ICON",
+      "params": {},
+      "evidence_short": "Synthetic fixture has no launcher activity."
+    },
+    {
+      "rule_id": "SG-EXF-001",
+      "category": "EXF",
+      "severity": "high",
+      "reason_code": "EXFIL_BOT_TOKEN",
+      "params": {},
+      "evidence_short": "Synthetic hashed bot-service token reference."
+    }
+  ],
+  "impersonation": {
+    "claimed_brand": null,
+    "match_basis": null,
+    "cert_matches_reference": null,
+    "confidence": 0
+  },
+  "features": {
+    "num_requested_permissions": 2,
+    "num_dangerous_permissions": 0,
+    "num_urls": 1,
+    "num_domains": 2,
+    "num_ip_addresses": 0,
+    "num_cloud_endpoints": 1,
+    "num_token_hashes": 1,
+    "num_cert_fingerprints": 1,
+    "num_rule_hits": 2,
+    "num_high_severity_hits": 1,
+    "num_medium_severity_hits": 1,
+    "num_low_severity_hits": 0,
+    "has_launcher_activity": false,
+    "has_accessibility_service": false,
+    "has_device_admin": false,
+    "has_sms_receiver": false,
+    "requests_install_packages": false,
+    "requests_overlay": false,
+    "embedded_apk_or_dex": false,
+    "dynamic_code_loading": false,
+    "is_signed": true,
+    "is_self_signed": true,
+    "is_debug_cert": true
+  },
+  "warnings": ["Defanged synthetic indicators are retained for fixture use."]
+}

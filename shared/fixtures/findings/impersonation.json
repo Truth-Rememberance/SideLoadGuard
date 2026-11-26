@@ -1,0 +1,98 @@
+{
+  "schema_version": "1.0",
+  "job_id": "b6cc8bda-3b74-4bb1-9cf5-70b7e0ad7404",
+  "analysis_version": "v1.0",
+  "analysis_status": "ok",
+  "failure_reason": null,
+  "file": {
+    "sha256": "0000000000000000000000000000000000000000000000000000000000000004",
+    "size_bytes": 3890123,
+    "detected_type": "apk",
+    "claimed_filename": "Example-Bank-Secure.apk"
+  },
+  "app": {
+    "label": "Example Bank Secure",
+    "package_name": "invalid.examplebank.secure.fake",
+    "version_name": "4.7",
+    "min_sdk": 23,
+    "target_sdk": 33
+  },
+  "certificate": {
+    "signed": true,
+    "sha256_fingerprints": ["4444444444444444444444444444444444444444444444444444444444444444"],
+    "subject": "CN=Fictional Bank Lookalike Publisher",
+    "self_signed": true,
+    "debug_cert": false
+  },
+  "permissions": {
+    "requested": ["android.permission.RECEIVE_SMS", "android.permission.INTERNET"],
+    "dangerous": ["android.permission.RECEIVE_SMS"]
+  },
+  "components": {
+    "has_launcher_activity": true,
+    "has_accessibility_service": false,
+    "has_device_admin": false,
+    "has_sms_receiver": false,
+    "requests_install_packages": false,
+    "requests_overlay": false,
+    "embedded_apk_or_dex": false,
+    "dynamic_code_loading": false
+  },
+  "indicators": {
+    "urls": [],
+    "domains": ["bank.example[.]invalid"],
+    "ip_addresses": [],
+    "cloud_endpoints": [],
+    "token_hashes": []
+  },
+  "rule_hits": [
+    {
+      "rule_id": "SG-IMP-001",
+      "category": "IMP",
+      "severity": "high",
+      "reason_code": "IMPERSONATION_CERT_MISMATCH",
+      "params": {},
+      "evidence_short": "Synthetic certificate does not match the Example Bank fictional reference."
+    },
+    {
+      "rule_id": "SG-IMP-002",
+      "category": "IMP",
+      "severity": "medium",
+      "reason_code": "IMPERSONATION_NAME_LOOKALIKE",
+      "params": {},
+      "evidence_short": "Synthetic app label resembles a fictional brand name."
+    }
+  ],
+  "impersonation": {
+    "claimed_brand": "Example Bank",
+    "match_basis": "name",
+    "cert_matches_reference": false,
+    "confidence": 0.92
+  },
+  "features": {
+    "num_requested_permissions": 2,
+    "num_dangerous_permissions": 1,
+    "num_urls": 0,
+    "num_domains": 1,
+    "num_ip_addresses": 0,
+    "num_cloud_endpoints": 0,
+    "num_token_hashes": 0,
+    "num_cert_fingerprints": 1,
+    "num_rule_hits": 2,
+    "num_high_severity_hits": 1,
+    "num_medium_severity_hits": 1,
+    "num_low_severity_hits": 0,
+    "has_launcher_activity": true,
+    "has_accessibility_service": false,
+    "has_device_admin": false,
+    "has_sms_receiver": false,
+    "requests_install_packages": false,
+    "requests_overlay": false,
+    "embedded_apk_or_dex": false,
+    "dynamic_code_loading": false,
+    "is_signed": true,
+    "is_self_signed": true,
+    "is_debug_cert": false
+  },
+  "warnings": ["Certificate reference comparison was synthetic."]
+}

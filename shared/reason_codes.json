@@ -1,0 +1,135 @@
+[
+  {
+    "code": "SMS_INTERCEPTION",
+    "en_title": "SMS interception behavior",
+    "en_text": "This app shows behavior that may read or receive SMS messages. Review it carefully before allowing access.",
+    "severity_default": "high",
+    "source": "rule"
+  },
+  {
+    "code": "ACCESSIBILITY_ABUSE",
+    "en_title": "Accessibility misuse",
+    "en_text": "This app asks for special screen-reading access that could let it act on your behalf. Check whether that access is truly needed.",
+    "severity_default": "high",
+    "source": "rule"
+  },
+  {
+    "code": "OVERLAY_ATTACK",
+    "en_title": "Screen overlay",
+    "en_text": "This app can place a screen over other apps. That could hide or change what you see while you act.",
+    "severity_default": "high",
+    "source": "rule"
+  },
+  {
+    "code": "DROPPER_BEHAVIOUR",
+    "en_title": "Additional app loading",
+    "en_text": "This app may contain or load another app from outside the usual install screen. Review it carefully.",
+    "severity_default": "high",
+    "source": "rule"
+  },
+  {
+    "code": "HIDDEN_LAUNCHER_ICON",
+    "en_title": "Missing launcher icon",
+    "en_text": "This app may not appear normally in your app list. Its behavior may be harder to notice or manage.",
+    "severity_default": "medium",
+    "source": "rule"
+  },
+  {
+    "code": "EXFIL_BOT_TOKEN",
+    "en_title": "Bot token exposure",
+    "en_text": "The app contains a protected reference linked to a bot service. The underlying secret is not shared or used.",
+    "severity_default": "high",
+    "source": "rule"
+  },
+  {
+    "code": "EXFIL_CLOUD_ENDPOINT",
+    "en_title": "Cloud transfer address",
+    "en_text": "The app refers to an external cloud address that may receive information. Review the app before continuing.",
+    "severity_default": "high",
+    "source": "rule"
+  },
+  {
+    "code": "EXFIL_HARDCODED_URL",
+    "en_title": "Fixed internet address",
+    "en_text": "The app contains a fixed internet address. Its presence may need further review.",
+    "severity_default": "medium",
+    "source": "rule"
+  },
+  {
+    "code": "OBFUSCATED_OR_PACKED",
+    "en_title": "Packed or hidden app",
+    "en_text": "The app is packed or hidden in a way that makes a complete review difficult.",
+    "severity_default": "high",
+    "source": "rule"
+  },
+  {
+    "code": "IMPERSONATION_CERT_MISMATCH",
+    "en_title": "Signing certificate mismatch",
+    "en_text": "The app is not using the signing certificate associated with the claimed brand in the official list.",
+    "severity_default": "high",
+    "source": "impersonation"
+  },
+  {
+    "code": "IMPERSONATION_NAME_LOOKALIKE",
+    "en_title": "Name resembles a known brand",
+    "en_text": "The app name appears to resemble a fictional brand in the official reference list.",
+    "severity_default": "medium",
+    "source": "impersonation"
+  },
+  {
+    "code": "MESSAGE_URGENCY",
+    "en_title": "Urgent request",
+    "en_text": "The message urges you to act immediately. A calm review may help you avoid a costly mistake.",
+    "severity_default": "medium",
+    "source": "message"
+  },
+  {
+    "code": "MESSAGE_THREAT",
+    "en_title": "Warning or threat",
+    "en_text": "The message includes a warning or threat to prompt action. Check it through an official channel.",
+    "severity_default": "high",
+    "source": "message"
+  },
+  {
+    "code": "MESSAGE_PAYMENT_DEMAND",
+    "en_title": "Payment requested",
+    "en_text": "The message asks for payment or financial details. Verify the request with the organisation directly.",
+    "severity_default": "high",
+    "source": "message"
+  },
+  {
+    "code": "MESSAGE_FAKE_AUTHORITY",
+    "en_title": "False authority claim",
+    "en_text": "The message claims authority or affiliation that may not be genuine. Verify the sender separately.",
+    "severity_default": "high",
+    "source": "message"
+  },
+  {
+    "code": "MESSAGE_INSTALL_REQUEST",
+    "en_title": "App installation request",
+    "en_text": "The message asks you to install an app outside the usual trusted app source. Check it carefully first.",
+    "severity_default": "high",
+    "source": "message"
+  },
+  {
+    "code": "MESSAGE_APP_MISMATCH",
+    "en_title": "App and message differ",
+    "en_text": "The app name or brand does not agree with the name in the message. Verify both through official sources.",
+    "severity_default": "medium",
+    "source": "message"
+  },
+  {
+    "code": "MODEL_HIGH_RISK",
+    "en_title": "High-risk assessment",
+    "en_text": "The assessment found a combination of signals associated with high risk. Proceed with caution.",
+    "severity_default": "high",
+    "source": "model"
+  },
+  {
+    "code": "NOT_ANALYSABLE",
+    "en_title": "Review could not finish",
+    "en_text": "A complete review could not be finished. This result is not a reassurance, and the app may still carry risk.",
+    "severity_default": "high",
+    "source": "rule"
+  }
+]

@@ -1,0 +1,412 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sideloadguard.invalid/shared/schemas/findings_record.schema.json",
+  "title": "SideloadGuard Findings Record",
+  "description": "Core static-analysis output produced by R1.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "job_id",
+    "analysis_version",
+    "analysis_status",
+    "failure_reason",
+    "file",
+    "app",
+    "certificate",
+    "permissions",
+    "components",
+    "indicators",
+    "rule_hits",
+    "impersonation",
+    "features",
+    "warnings"
+  ],
+  "properties": {
+    "schema_version": {
+      "description": "The Findings Record schema version.",
+      "type": "string",
+      "const": "1.0"
+    },
+    "job_id": {
+      "description": "UUID v4 identifier for the analysis job.",
+      "type": "string",
+      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12})$"
+    },
+    "analysis_version": {
+      "description": "R1 analyzer and rule-set version used for this result.",
+      "type": "string",
+      "pattern": "^v?[0-9]+[A-Za-z0-9._-]*$"
+    },
+    "analysis_status": {
+      "description": "Whether static analysis completed, completed partially, or failed.",
+      "type": "string",
+      "enum": ["ok", "partial", "failed"]
+    },
+    "failure_reason": {
+      "description": "A machine-readable reason for partial or failed analysis, or null.",
+      "type": ["string", "null"],
+      "enum": [null, "packed_obfuscated", "invalid_apk", "timeout", "unpack_limit"]
+    },
+    "file": {
+      "description": "File identity and detected type.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sha256", "size_bytes", "detected_type"],
+      "properties": {
+        "sha256": {
+          "description": "Lowercase SHA-256 hexadecimal hash of the submitted file.",
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "size_bytes": {
+          "description": "Submitted file size in bytes.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "detected_type": {
+          "description": "Content-detected file type.",
+          "type": "string",
+          "enum": ["apk", "zip", "other", "unknown"]
+        },
+        "claimed_filename": {
+          "description": "Optional fictional filename supplied by the caller; stripped before storage. Null means no filename was supplied.",
+          "type": ["string", "null"],
+          "anyOf": [
+            {"type": "null"},
+            {
+              "type": "string",
+              "minLength": 1,
+              "not": {"pattern": "[0-9]+:[A-Za-z0-9_-]{30,}"}
+            }
+          ]
+        }
+      }
+    },
+    "app": {
+      "description": "Basic application manifest details.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["label", "package_name", "version_name", "min_sdk", "target_sdk"],
+      "properties": {
+        "label": {
+          "description": "Application display label. Null means the value is unknown, not zero or false.",
+          "type": ["string", "null"],
+          "anyOf": [
+            {"type": "null"},
+            {
+              "type": "string",
+              "maxLength": 100,
+              "not": {"pattern": "[0-9]+:[A-Za-z0-9_-]{30,}"}
+            }
+          ]
+        },
+        "package_name": {
+          "description": "Android application package name. Null means the value is unknown, not zero or false.",
+          "type": ["string", "null"],
+          "anyOf": [
+            {"type": "null"},
+            {
+              "type": "string",
+              "not": {"pattern": "[0-9]+:[A-Za-z0-9_-]{30,}"}
+            }
+          ]
+        },
+        "version_name": {
+          "description": "Application version name. Null means unknown, not zero or false.",
+          "type": ["string", "null"],
+          "anyOf": [
+            {"type": "null"},
+            {
+              "type": "string",
+              "not": {"pattern": "[0-9]+:[A-Za-z0-9_-]{30,}"}
+            }
+          ]
+        },
+        "min_sdk": {
+          "description": "Minimum Android SDK level declared by the app. Null means unknown, not zero or false.",
+          "type": ["integer", "null"],
+          "minimum": 1
+        },
+        "target_sdk": {
+          "description": "Target Android SDK level declared by the app. Null means unknown, not zero or false.",
+          "type": ["integer", "null"],
+          "minimum": 1
+        }
+      }
+    },
+    "certificate": {
+      "description": "Signing certificate summary.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["signed", "sha256_fingerprints", "subject", "self_signed", "debug_cert"],
+      "properties": {
+        "signed": {
+          "description": "Whether the APK has a signing certificate. Null means certificate information is unknown, not zero or false.",
+          "type": ["boolean", "null"]
+        },
+        "sha256_fingerprints": {
+          "description": "Lowercase SHA-256 certificate fingerprints.",
+          "type": "array",
+          "items": {
+            "description": "One certificate fingerprint.",
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        },
+        "subject": {
+          "description": "Certificate subject name. Null means unknown, not zero or false.",
+          "type": ["string", "null"],
+          "anyOf": [
+            {"type": "null"},
+            {
+              "type": "string",
+              "not": {"pattern": "[0-9]+:[A-Za-z0-9_-]{30,}"}
+            }
+          ]
+        },
+        "self_signed": {
+          "description": "Whether the signing certificate is self-signed. Null means unknown, not zero or false.",
+          "type": ["boolean", "null"]
+        },
+        "debug_cert": {
+          "description": "Whether the signing certificate is a debug certificate. Null means unknown, not zero or false.",
+          "type": ["boolean", "null"]
+        }
+      }
+    },
+    "permissions": {
+      "description": "Android permissions declared by the app.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requested", "dangerous"],
+      "properties": {
+        "requested": {
+          "description": "All permissions requested by the app.",
+          "type": "array",
+          "items": {"description": "One requested Android permission.", "type": "string"}
+        },
+        "dangerous": {
+          "description": "Requested dangerous permissions.",
+          "type": "array",
+          "items": {"description": "One dangerous Android permission.", "type": "string"}
+        }
+      }
+    },
+    "components": {
+      "description": "Relevant application component and behavior flags.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "has_launcher_activity",
+        "has_accessibility_service",
+        "has_device_admin",
+        "has_sms_receiver",
+        "requests_install_packages",
+        "requests_overlay",
+        "embedded_apk_or_dex",
+        "dynamic_code_loading"
+      ],
+      "properties": {
+        "has_launcher_activity": {"description": "Whether the app has a launcher activity.", "type": "boolean"},
+        "has_accessibility_service": {"description": "Whether the app declares an accessibility service.", "type": "boolean"},
+        "has_device_admin": {"description": "Whether the app declares device administrator behavior.", "type": "boolean"},
+        "has_sms_receiver": {"description": "Whether the app declares an SMS receiver.", "type": "boolean"},
+        "requests_install_packages": {"description": "Whether the app requests package-install permission.", "type": "boolean"},
+        "requests_overlay": {"description": "Whether the app requests display-over-other-apps permission.", "type": "boolean"},
+        "embedded_apk_or_dex": {"description": "Whether an embedded APK or DEX payload was detected.", "type": "boolean"},
+        "dynamic_code_loading": {"description": "Whether dynamic code loading behavior was detected.", "type": "boolean"}
+      }
+    },
+    "indicators": {
+      "description": "Sanitized indicators found in the app.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["urls", "domains", "ip_addresses", "cloud_endpoints", "token_hashes"],
+      "properties": {
+        "urls": {"description": "Defanged or sanitized hardcoded URLs.", "type": "array", "items": {"description": "One defanged URL.", "type": "string", "not": {"pattern": "[0-9]+:[A-Za-z0-9_-]{30,}"}}},
+        "domains": {"description": "Sanitized domains found in the app.", "type": "array", "items": {"description": "One sanitized domain.", "type": "string", "not": {"pattern": "[0-9]+:[A-Za-z0-9_-]{30,}"}}},
+        "ip_addresses": {"description": "IP addresses found in the app.", "type": "array", "items": {"description": "One IP address.", "type": "string", "not": {"pattern": "[0-9]+:[A-Za-z0-9_-]{30,}"}}},
+        "cloud_endpoints": {"description": "Sanitized cloud endpoints found in the app.", "type": "array", "items": {"description": "One cloud endpoint.", "type": "string", "not": {"pattern": "[0-9]+:[A-Za-z0-9_-]{30,}"}}},
+        "token_hashes": {
+          "description": "SHA-256 hashes of detected tokens; raw tokens are prohibited.",
+          "type": "array",
+          "items": {"description": "One token hash.", "type": "string", "pattern": "^[0-9a-f]{64}$"}
+        }
+      }
+    },
+    "rule_hits": {
+      "description": "Static-analysis rules that matched.",
+      "type": "array",
+      "items": {
+        "description": "One rule match.",
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["rule_id", "category", "severity", "reason_code", "params", "evidence_short"],
+        "properties": {
+          "rule_id": {
+            "description": "Stable rule identifier.",
+            "type": "string",
+            "pattern": "^SG-(SMS|ACC|OVL|DRP|HID|EXF|IMP|OBF)-[0-9]{3}$"
+          },
+          "category": {
+            "description": "The rule category.",
+            "type": "string",
+            "enum": ["SMS", "ACC", "OVL", "DRP", "HID", "EXF", "IMP", "OBF"]
+          },
+          "severity": {
+            "description": "Severity assigned to this rule match.",
+            "type": "string",
+            "enum": ["low", "medium", "high"]
+          },
+          "reason_code": {
+            "description": "Master-list reason code emitted by this rule.",
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]*$"
+          },
+          "params": {
+            "description": "Developer-facing parameters used to describe the match.",
+            "type": "object",
+            "additionalProperties": false,
+            "patternProperties": {
+              ".*": {
+                "description": "One primitive rule parameter.",
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 100,
+                    "not": {"pattern": "[0-9]+:[A-Za-z0-9_-]{30,}"}
+                  },
+                  {"type": "number"},
+                  {"type": "boolean"}
+                ]
+              }
+            }
+          },
+          "evidence_short": {
+            "description": "Developer-only short evidence description.",
+            "type": "string",
+            "maxLength": 200,
+            "not": {"pattern": "[0-9]+:[A-Za-z0-9_-]{30,}"}
+          }
+        }
+      }
+    },
+    "impersonation": {
+      "description": "Brand impersonation comparison result.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["claimed_brand", "match_basis", "cert_matches_reference", "confidence"],
+      "properties": {
+        "claimed_brand": {
+          "description": "Fictional claimed brand name, or null.",
+          "type": ["string", "null"],
+          "anyOf": [
+            {"type": "null"},
+            {
+              "type": "string",
+              "not": {"pattern": "[0-9]+:[A-Za-z0-9_-]{30,}"}
+            }
+          ]
+        },
+        "match_basis": {
+          "description": "Basis used for a name or package match, or null when there is no match.",
+          "type": ["string", "null"],
+          "enum": ["name", "package", null]
+        },
+        "cert_matches_reference": {
+          "description": "Whether a certificate matches the official reference, or unknown/null.",
+          "type": ["boolean", "null"]
+        },
+        "confidence": {
+          "description": "Impersonation confidence from zero to one.",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "registry_entry_id": {
+          "description": "Optional hook for a future official-registry entry identifier.",
+          "type": "string"
+        }
+      }
+    },
+    "features": {
+      "description": "Flat numeric and boolean feature map consumed by R2.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "num_requested_permissions",
+        "num_dangerous_permissions",
+        "num_urls",
+        "num_domains",
+        "num_ip_addresses",
+        "num_cloud_endpoints",
+        "num_token_hashes",
+        "num_cert_fingerprints",
+        "num_rule_hits",
+        "num_high_severity_hits",
+        "num_medium_severity_hits",
+        "num_low_severity_hits",
+        "has_launcher_activity",
+        "has_accessibility_service",
+        "has_device_admin",
+        "has_sms_receiver",
+        "requests_install_packages",
+        "requests_overlay",
+        "embedded_apk_or_dex",
+        "dynamic_code_loading",
+        "is_signed",
+        "is_self_signed",
+        "is_debug_cert"
+      ],
+      "properties": {
+        "num_requested_permissions": {"description": "Count of requested permissions.", "type": "number"},
+        "num_dangerous_permissions": {"description": "Count of dangerous permissions.", "type": "number"},
+        "num_urls": {"description": "Count of defanged URLs.", "type": "number"},
+        "num_domains": {"description": "Count of domains.", "type": "number"},
+        "num_ip_addresses": {"description": "Count of IP addresses.", "type": "number"},
+        "num_cloud_endpoints": {"description": "Count of cloud endpoints.", "type": "number"},
+        "num_token_hashes": {"description": "Count of token hashes.", "type": "number"},
+        "num_cert_fingerprints": {"description": "Count of certificate fingerprints.", "type": "number"},
+        "num_rule_hits": {"description": "Count of matched rules.", "type": "number"},
+        "num_high_severity_hits": {"description": "Count of high-severity rule hits.", "type": "number"},
+        "num_medium_severity_hits": {"description": "Count of medium-severity rule hits.", "type": "number"},
+        "num_low_severity_hits": {"description": "Count of low-severity rule hits.", "type": "number"},
+        "has_launcher_activity": {"description": "Mirrors the launcher component flag.", "type": "boolean"},
+        "has_accessibility_service": {"description": "Mirrors the accessibility component flag.", "type": "boolean"},
+        "has_device_admin": {"description": "Mirrors the device-admin component flag.", "type": "boolean"},
+        "has_sms_receiver": {"description": "Mirrors the SMS receiver component flag.", "type": "boolean"},
+        "requests_install_packages": {"description": "Mirrors the package-install request flag.", "type": "boolean"},
+        "requests_overlay": {"description": "Mirrors the overlay request flag.", "type": "boolean"},
+        "embedded_apk_or_dex": {"description": "Mirrors the embedded payload flag.", "type": "boolean"},
+        "dynamic_code_loading": {"description": "Mirrors the dynamic-code flag.", "type": "boolean"},
+        "is_signed": {"description": "Mirrors whether the certificate record says signed.", "type": "boolean"},
+        "is_self_signed": {"description": "Mirrors whether the certificate record says self-signed.", "type": "boolean"},
+        "is_debug_cert": {"description": "Mirrors whether the certificate record says debug.", "type": "boolean"}
+      }
+    },
+    "warnings": {
+      "description": "Non-fatal analysis warnings.",
+      "type": "array",
+      "items": {
+        "description": "One warning message.",
+        "type": "string",
+        "maxLength": 200,
+        "not": {"pattern": "[0-9]+:[A-Za-z0-9_-]{30,}"}
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"analysis_status": {"const": "ok"}}, "required": ["analysis_status"]},
+      "then": {"properties": {"failure_reason": {"const": null}}, "required": ["failure_reason"]}
+    },
+    {
+      "if": {"properties": {"analysis_status": {"enum": ["partial", "failed"]}}, "required": ["analysis_status"]},
+      "then": {
+        "properties": {"failure_reason": {"enum": ["packed_obfuscated", "invalid_apk", "timeout", "unpack_limit"], "type": "string"}},
+        "required": ["failure_reason"]
+      }
+    }
+  ]
+}

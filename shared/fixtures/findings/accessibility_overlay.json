@@ -1,0 +1,98 @@
+{
+  "schema_version": "1.0",
+  "job_id": "f0c7d3ca-9b14-4c82-82e5-9d4a109ae106",
+  "analysis_version": "v1.0",
+  "analysis_status": "ok",
+  "failure_reason": null,
+  "file": {
+    "sha256": "0000000000000000000000000000000000000000000000000000000000000006",
+    "size_bytes": 5287654,
+    "detected_type": "apk",
+    "claimed_filename": "Example-Support-Assistant.apk"
+  },
+  "app": {
+    "label": "Example Support Assistant",
+    "package_name": "invalid.example.supportassistant",
+    "version_name": "3.2.1",
+    "min_sdk": 23,
+    "target_sdk": 34
+  },
+  "certificate": {
+    "signed": true,
+    "sha256_fingerprints": ["6666666666666666666666666666666666666666666666666666666666666666"],
+    "subject": "CN=Fictional Support Publisher",
+    "self_signed": true,
+    "debug_cert": false
+  },
+  "permissions": {
+    "requested": ["android.permission.BIND_ACCESSIBILITY_SERVICE", "android.permission.SYSTEM_ALERT_WINDOW", "android.permission.INTERNET"],
+    "dangerous": ["android.permission.BIND_ACCESSIBILITY_SERVICE"]
+  },
+  "components": {
+    "has_launcher_activity": true,
+    "has_accessibility_service": true,
+    "has_device_admin": false,
+    "has_sms_receiver": false,
+    "requests_install_packages": false,
+    "requests_overlay": true,
+    "embedded_apk_or_dex": false,
+    "dynamic_code_loading": false
+  },
+  "indicators": {
+    "urls": [],
+    "domains": [],
+    "ip_addresses": [],
+    "cloud_endpoints": [],
+    "token_hashes": []
+  },
+  "rule_hits": [
+    {
+      "rule_id": "SG-ACC-001",
+      "category": "ACC",
+      "severity": "high",
+      "reason_code": "ACCESSIBILITY_ABUSE",
+      "params": {},
+      "evidence_short": "Synthetic accessibility service declaration."
+    },
+    {
+      "rule_id": "SG-OVL-001",
+      "category": "OVL",
+      "severity": "high",
+      "reason_code": "OVERLAY_ATTACK",
+      "params": {},
+      "evidence_short": "Synthetic overlay permission request."
+    }
+  ],
+  "impersonation": {
+    "claimed_brand": null,
+    "match_basis": null,
+    "cert_matches_reference": null,
+    "confidence": 0.12
+  },
+  "features": {
+    "num_requested_permissions": 3,
+    "num_dangerous_permissions": 1,
+    "num_urls": 0,
+    "num_domains": 0,
+    "num_ip_addresses": 0,
+    "num_cloud_endpoints": 0,
+    "num_token_hashes": 0,
+    "num_cert_fingerprints": 1,
+    "num_rule_hits": 2,
+    "num_high_severity_hits": 2,
+    "num_medium_severity_hits": 0,
+    "num_low_severity_hits": 0,
+    "has_launcher_activity": true,
+    "has_accessibility_service": true,
+    "has_device_admin": false,
+    "has_sms_receiver": false,
+    "requests_install_packages": false,
+    "requests_overlay": true,
+    "embedded_apk_or_dex": false,
+    "dynamic_code_loading": false,
+    "is_signed": true,
+    "is_self_signed": true,
+    "is_debug_cert": false
+  },
+  "warnings": []
+}
