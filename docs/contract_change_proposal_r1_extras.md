@@ -15,3 +15,14 @@ The optional fields would preserve room for later R1 evidence and scoring improv
 - R3 must allow these fields to remain in cached findings and must strip or redact evidence locations if they could expose internal storage details.
 - R4 must not display raw evidence locations or optional technical values unless an approved explanation format is defined.
 - Team reviewers must approve the exact types and names, add schema support, update fixtures and tests, and bump the contract version before implementation.
+
+## Format clarifications requested by R4
+
+The following Findings Record formats and constraints are reflected in the schema:
+
+- `schema_version` is the fixed string `"1.0"`.
+- `analysis_version` must match `^v?[0-9]+[A-Za-z0-9._-]*$`.
+- `detected_type` is one of `apk`, `zip`, `other`, or `unknown`.
+- Add `analysis_error` to `failure_reason` for an unexpected internal error. This value means "unexpected internal error, not a statement about the file". An `ok` record must still have a null failure reason; `partial` and `failed` records must have a non-null enum value.
+- Set maximum string lengths while retaining existing patterns: `app.package_name` 256, `app.version_name` 256, each `indicators.urls` item 2048, each `indicators.domains` item 253, each `indicators.cloud_endpoints` item 2048, and `certificate.subject` 500.
+- Keep all existing feature keys required with their current types. Additional feature keys may be added only with number or boolean values; R2 must document each additional key in `shared/schemas/features.md`.

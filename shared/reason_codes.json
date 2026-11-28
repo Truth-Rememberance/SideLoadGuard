@@ -72,7 +72,7 @@
   {
     "code": "IMPERSONATION_NAME_LOOKALIKE",
     "en_title": "Name resembles a known brand",
-    "en_text": "The app name appears to resemble a fictional brand in the official reference list.",
+    "en_text": "The app name looks like a well-known brand from the official list. It may be an imitation.",
     "severity_default": "medium",
     "source": "impersonation"
   },
