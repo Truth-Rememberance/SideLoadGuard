@@ -1,0 +1,8 @@
+samples/
+.env
+__pycache__/
+.pytest_cache/
+*.pyc
+*.apk
+*.dex
+.venv/

@@ -1,0 +1,90 @@
+{
+  "schema_version": "1.0",
+  "job_id": "a1be5a32-df4c-4ea1-ae38-44d7dbf7d303",
+  "analysis_version": "v1.0",
+  "analysis_status": "ok",
+  "failure_reason": null,
+  "file": {
+    "sha256": "0000000000000000000000000000000000000000000000000000000000000003",
+    "size_bytes": 6154321,
+    "detected_type": "apk",
+    "claimed_filename": "Example-Utility-Update.apk"
+  },
+  "app": {
+    "label": "Example Utility Update",
+    "package_name": "invalid.example.utilityupdate",
+    "version_name": "9.8",
+    "min_sdk": 24,
+    "target_sdk": 31
+  },
+  "certificate": {
+    "signed": true,
+    "sha256_fingerprints": ["3333333333333333333333333333333333333333333333333333333333333333"],
+    "subject": "CN=Fictional Utility Publisher",
+    "self_signed": true,
+    "debug_cert": true
+  },
+  "permissions": {
+    "requested": ["android.permission.REQUEST_INSTALL_PACKAGES", "android.permission.INTERNET"],
+    "dangerous": []
+  },
+  "components": {
+    "has_launcher_activity": true,
+    "has_accessibility_service": false,
+    "has_device_admin": false,
+    "has_sms_receiver": false,
+    "requests_install_packages": true,
+    "requests_overlay": false,
+    "embedded_apk_or_dex": true,
+    "dynamic_code_loading": true
+  },
+  "indicators": {
+    "urls": [],
+    "domains": [],
+    "ip_addresses": [],
+    "cloud_endpoints": ["storage.example[.]invalid/upload"],
+    "token_hashes": []
+  },
+  "rule_hits": [
+    {
+      "rule_id": "SG-DRP-001",
+      "category": "DRP",
+      "severity": "high",
+      "reason_code": "DROPPER_BEHAVIOUR",
+      "params": {},
+      "evidence_short": "Synthetic embedded payload and dynamic code-loading indicators."
+    }
+  ],
+  "impersonation": {
+    "claimed_brand": null,
+    "match_basis": null,
+    "cert_matches_reference": null,
+    "confidence": 0.1
+  },
+  "features": {
+    "num_requested_permissions": 2,
+    "num_dangerous_permissions": 0,
+    "num_urls": 0,
+    "num_domains": 0,
+    "num_ip_addresses": 0,
+    "num_cloud_endpoints": 1,
+    "num_token_hashes": 0,
+    "num_cert_fingerprints": 1,
+    "num_rule_hits": 1,
+    "num_high_severity_hits": 1,
+    "num_medium_severity_hits": 0,
+    "num_low_severity_hits": 0,
+    "has_launcher_activity": true,
+    "has_accessibility_service": false,
+    "has_device_admin": false,
+    "has_sms_receiver": false,
+    "requests_install_packages": true,
+    "requests_overlay": false,
+    "embedded_apk_or_dex": true,
+    "dynamic_code_loading": true,
+    "is_signed": true,
+    "is_self_signed": true,
+    "is_debug_cert": true
+  },
+  "warnings": []
+}

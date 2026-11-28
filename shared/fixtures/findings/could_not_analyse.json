@@ -1,0 +1,81 @@
+{
+  "schema_version": "1.0",
+  "job_id": "0cd5cc76-8f08-4bc5-a661-7ee31c55c305",
+  "analysis_version": "v1.0",
+  "analysis_status": "failed",
+  "failure_reason": "invalid_apk",
+  "file": {
+    "sha256": "0000000000000000000000000000000000000000000000000000000000000005",
+    "size_bytes": 1024,
+    "detected_type": "other",
+    "claimed_filename": "Not-An-App.apk"
+  },
+  "app": {
+    "label": null,
+    "package_name": null,
+    "version_name": null,
+    "min_sdk": null,
+    "target_sdk": null
+  },
+  "certificate": {
+    "signed": null,
+    "sha256_fingerprints": [],
+    "subject": null,
+    "self_signed": null,
+    "debug_cert": null
+  },
+  "permissions": {
+    "requested": [],
+    "dangerous": []
+  },
+  "components": {
+    "has_launcher_activity": false,
+    "has_accessibility_service": false,
+    "has_device_admin": false,
+    "has_sms_receiver": false,
+    "requests_install_packages": false,
+    "requests_overlay": false,
+    "embedded_apk_or_dex": false,
+    "dynamic_code_loading": false
+  },
+  "indicators": {
+    "urls": [],
+    "domains": [],
+    "ip_addresses": [],
+    "cloud_endpoints": [],
+    "token_hashes": []
+  },
+  "rule_hits": [],
+  "impersonation": {
+    "claimed_brand": null,
+    "match_basis": null,
+    "cert_matches_reference": null,
+    "confidence": 0
+  },
+  "features": {
+    "num_requested_permissions": 0,
+    "num_dangerous_permissions": 0,
+    "num_urls": 0,
+    "num_domains": 0,
+    "num_ip_addresses": 0,
+    "num_cloud_endpoints": 0,
+    "num_token_hashes": 0,
+    "num_cert_fingerprints": 0,
+    "num_rule_hits": 0,
+    "num_high_severity_hits": 0,
+    "num_medium_severity_hits": 0,
+    "num_low_severity_hits": 0,
+    "has_launcher_activity": false,
+    "has_accessibility_service": false,
+    "has_device_admin": false,
+    "has_sms_receiver": false,
+    "requests_install_packages": false,
+    "requests_overlay": false,
+    "embedded_apk_or_dex": false,
+    "dynamic_code_loading": false,
+    "is_signed": false,
+    "is_self_signed": false,
+    "is_debug_cert": false
+  },
+  "warnings": ["APK manifest could not be parsed.", "App and certificate details are unknown."]
+}
