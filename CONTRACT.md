@@ -11,10 +11,10 @@ Team: Nidhi, Yuktaa, Sidhanth, Shravya. This is a draft: fill in the owner names
 ## 1. Roles
 | Role | Owner | Owns | Folder / package |
 |---|---|---|---|
-| **R1 Analysis Engine and Registry** | ____ | Intake validation, static extraction, YARA and custom rules, impersonation checks, official-app list, Findings Record format | `analysis/` · `sg_analysis` |
-| **R2 Intelligence** | ____ | Datasets, features, classifier, evaluation, message analysis, risk scoring, verdict cut-offs | `intel/` · `sg_intel` |
-| **R3 Platform, Bot and Safety** | ____ | Docker sandbox runner, Telegram bot, FastAPI + SQLite, job queue, hash cache, indicator feed, campaigns | `backend/` · `sg_backend` |
-| **R4 Web, Dojo and Explanations** | ____ | Website, Inoculation Dojo, explanation and report engine, EN/KN/HI translations | `web/`, `explain/` · `sg_explain` |
+| **R1 Analysis Engine and Registry** | Yuktaa | Intake validation, static extraction, YARA and custom rules, impersonation checks, official-app list, Findings Record format | `analysis/` · `sg_analysis` |
+| **R2 Intelligence** | Nidhi | Datasets, features, classifier, evaluation, message analysis, risk scoring, verdict cut-offs | `intel/` · `sg_intel` |
+| **R3 Platform, Bot and Safety** | Shravya | Docker sandbox runner, Telegram bot, FastAPI + SQLite, job queue, hash cache, indicator feed, campaigns | `backend/` · `sg_backend` |
+| **R4 Web, Dojo and Explanations** | Sidhanth | Website, Inoculation Dojo, explanation and report engine, EN/KN/HI translations | `web/`, `explain/` · `sg_explain` |
 
 **Group-wide (not a role):** field survey, awareness sessions, documentation, final report, demo video. Also prior-art search: each owner finds 2 to 3 recent papers for their area and lists them in `docs/papers.md`.
 
