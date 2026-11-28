@@ -46,6 +46,15 @@ DANGEROUS_PERMISSIONS = {
     "android.permission.WRITE_EXTERNAL_STORAGE",
     "android.permission.POST_NOTIFICATIONS",
 }
+STRING_LIMITS = {
+    "label": 100,
+    "package_name": 256,
+    "version_name": 256,
+    "certificate.subject": 500,
+    "indicators.urls": 2048,
+    "indicators.domains": 253,
+    "indicators.cloud_endpoints": 2048,
+}
 
 
 def _job_id(value: str) -> str:
@@ -148,9 +157,9 @@ def _certificate_summary(apk: APK) -> tuple[dict, list[str]]:
     try:
         certificates = apk.get_certificates()
         signed = apk.is_signed()
-    except Exception as exc:
+    except Exception:
         return {"signed": None, "sha256_fingerprints": [], "subject": None, "self_signed": None, "debug_cert": None}, [
-            f"Certificate extraction failed: {type(exc).__name__}"
+            "Certificate extraction failed."
         ]
 
     fingerprints: list[str] = []
@@ -161,13 +170,14 @@ def _certificate_summary(apk: APK) -> tuple[dict, list[str]]:
         try:
             der = certificate.dump()
             fingerprints.append(hashlib.sha256(der).hexdigest())
-        except Exception as exc:
-            warnings.append(f"Certificate fingerprint failed: {type(exc).__name__}")
+        except Exception:
+            warnings.append("Certificate fingerprint extraction failed.")
         try:
             native = certificate.subject.native
             subject_text = ", ".join(f"{key}={value}" for key, value in native.items()) if native else None
         except Exception:
             subject_text = None
+            warnings.append("Certificate subject extraction failed.")
         try:
             subject = certificate.subject.native
             issuer = certificate.issuer.native
@@ -175,8 +185,8 @@ def _certificate_summary(apk: APK) -> tuple[dict, list[str]]:
             subject_text_lower = str(subject).lower()
             issuer_text_lower = str(issuer).lower()
             debug_cert = "android debug" in subject_text_lower or "android debug" in issuer_text_lower
-        except Exception as exc:
-            warnings.append(f"Certificate identity check failed: {type(exc).__name__}")
+        except Exception:
+            warnings.append("Certificate identity extraction failed.")
     fingerprints = sorted(set(fingerprints))
     return {
         "signed": signed,
@@ -240,7 +250,7 @@ def _manifest_components(apk: APK, permissions: list[str]) -> tuple[dict, list[s
         )
         # This is intentionally limited to manifest/static archive evidence.
         dynamic = any(name.lower().endswith(".jar") for name in files)
-    except Exception as exc:
+    except Exception:
         return {
             "has_launcher_activity": False,
             "has_accessibility_service": False,
@@ -250,7 +260,7 @@ def _manifest_components(apk: APK, permissions: list[str]) -> tuple[dict, list[s
             "requests_overlay": False,
             "embedded_apk_or_dex": False,
             "dynamic_code_loading": False,
-        }, [f"Component extraction failed: {type(exc).__name__}"]
+        }, ["Component extraction failed."]
 
     return {
         "has_launcher_activity": has_launcher,
@@ -271,30 +281,30 @@ def _extract(apk_path: str, record: dict) -> dict:
 
     try:
         record["app"]["package_name"] = apk.get_package() or None
-    except Exception as exc:
-        warnings.append(f"Package extraction failed: {type(exc).__name__}")
+    except Exception:
+        warnings.append("Package extraction failed.")
     try:
         record["app"]["label"] = apk.get_app_name() or None
-    except Exception as exc:
-        warnings.append(f"Label extraction failed: {type(exc).__name__}")
+    except Exception:
+        warnings.append("Label extraction failed.")
     try:
         record["app"]["version_name"] = apk.get_androidversion_name() or None
-    except Exception as exc:
-        warnings.append(f"Version extraction failed: {type(exc).__name__}")
+    except Exception:
+        warnings.append("Version extraction failed.")
     try:
         record["app"]["min_sdk"] = _safe_int(apk.get_min_sdk_version())
-    except Exception as exc:
-        warnings.append(f"Minimum SDK extraction failed: {type(exc).__name__}")
+    except Exception:
+        warnings.append("Minimum SDK extraction failed.")
     try:
         record["app"]["target_sdk"] = _safe_int(apk.get_target_sdk_version())
-    except Exception as exc:
-        warnings.append(f"Target SDK extraction failed: {type(exc).__name__}")
+    except Exception:
+        warnings.append("Target SDK extraction failed.")
 
     try:
         requested = sorted(set(apk.get_permissions()))
-    except Exception as exc:
+    except Exception:
         requested = []
-        warnings.append(f"Permission extraction failed: {type(exc).__name__}")
+        warnings.append("Permission extraction failed.")
     record["permissions"]["requested"] = requested
     record["permissions"]["dangerous"] = sorted(permission for permission in requested if permission in DANGEROUS_PERMISSIONS)
 
@@ -309,58 +319,104 @@ def _extract(apk_path: str, record: dict) -> dict:
     record["warnings"] = warnings
     record["features"] = compute_features(record)
     record["analysis_status"] = "partial" if warnings else "ok"
-    record["failure_reason"] = "packed_obfuscated" if warnings else None
+    record["failure_reason"] = "analysis_error" if warnings else None
     return record
+
+
+def _finalize_record(record: dict) -> dict:
+    """Apply schema string ceilings and refresh derived features before return."""
+    app = record["app"]
+    certificate = record["certificate"]
+    indicators = record["indicators"]
+    truncated_fields: list[str] = []
+
+    for field in ("label", "package_name", "version_name"):
+        value = app[field]
+        limit = STRING_LIMITS[field]
+        if isinstance(value, str) and len(value) > limit:
+            app[field] = value[:limit]
+            truncated_fields.append(field)
+
+    subject = certificate["subject"]
+    if isinstance(subject, str) and len(subject) > STRING_LIMITS["certificate.subject"]:
+        certificate["subject"] = subject[:STRING_LIMITS["certificate.subject"]]
+        truncated_fields.append("certificate.subject")
+
+    for field in ("urls", "domains", "cloud_endpoints"):
+        limit = STRING_LIMITS[f"indicators.{field}"]
+        values = indicators[field]
+        for index, value in enumerate(values):
+            if isinstance(value, str) and len(value) > limit:
+                values[index] = value[:limit]
+                if field not in truncated_fields:
+                    truncated_fields.append(field)
+
+    record["warnings"].extend(f"{field} truncated" for field in truncated_fields)
+    record["features"] = compute_features(record)
+    return record
+
+
+def _failed_record(job_id: str, claimed_filename: str | None, reason: str, warning: str) -> dict:
+    intake = {
+        "sha256": "0" * 64,
+        "size_bytes": 0,
+        "detected_type": "unknown",
+    }
+    record = _base_record(job_id, intake, claimed_filename)
+    record["analysis_status"] = "failed"
+    record["failure_reason"] = reason
+    record["warnings"] = [warning]
+    return _finalize_record(record)
 
 
 def analyze_apk(path: str | os.PathLike[str], job_id: str, claimed_filename: str | None = None, timeout_seconds: float | None = None) -> dict:
     """Analyze an APK fully and never raise to the caller."""
-    source = Path(path)
-    intake = validate_intake(source)
-    record = _base_record(job_id, intake, claimed_filename)
-    record["features"] = compute_features(record)
-
-    if not intake["ok"]:
-        record["failure_reason"] = intake["failure_reason"]
-        record["warnings"] = [intake.get("message", "Input validation failed.")]
-        record["features"] = compute_features(record)
-        return record
-
-    budget = ANALYSIS_TIMEOUT_SECONDS if timeout_seconds is None else max(0.0, float(timeout_seconds))
-    result_queue: Queue[dict | BaseException] = Queue(maxsize=1)
-
-    def worker() -> None:
-        try:
-            result_queue.put(_extract(str(source), record))
-        except BaseException as exc:
-            result_queue.put(exc)
-
-    # A daemon worker is the Windows-safe timeout mechanism: it avoids killing the process,
-    # but prevents the worker thread from delaying process shutdown.
-    worker_thread = threading.Thread(target=worker, daemon=True)
-    worker_thread.start()
-    worker_thread.join(budget)
-
-    if worker_thread.is_alive():
-        record["analysis_status"] = "failed"
-        record["failure_reason"] = "timeout"
-        record["warnings"] = ["Androguard analysis exceeded the time budget."]
-        record["features"] = compute_features(record)
-        return record
-
     try:
-        outcome = result_queue.get_nowait()
-    except Exception:
-        record["analysis_status"] = "failed"
-        record["failure_reason"] = "invalid_apk"
-        record["warnings"] = ["Androguard returned no result."]
-        record["features"] = compute_features(record)
-        return record
+        source = Path(path)
+        intake = validate_intake(source)
+        record = _base_record(job_id, intake, claimed_filename)
 
-    if isinstance(outcome, BaseException):
-        record["analysis_status"] = "failed"
-        record["failure_reason"] = "invalid_apk"
-        record["warnings"] = [f"Androguard analysis failed: {type(outcome).__name__}"]
-        record["features"] = compute_features(record)
-        return record
-    return outcome
+        if not intake["ok"]:
+            reason = intake.get("failure_reason")
+            if reason not in {"invalid_apk", "unpack_limit"}:
+                reason = "analysis_error"
+            warning = "Input exceeded configured limits." if reason == "unpack_limit" else "Input is not a valid APK."
+            record["analysis_status"] = "failed"
+            record["failure_reason"] = reason
+            record["warnings"] = [warning]
+            return _finalize_record(record)
+
+        budget = ANALYSIS_TIMEOUT_SECONDS if timeout_seconds is None else max(0.0, float(timeout_seconds))
+        result_queue: Queue[dict | BaseException] = Queue(maxsize=1)
+
+        def worker() -> None:
+            try:
+                result_queue.put(_extract(str(source), record))
+            except BaseException as exc:
+                result_queue.put(exc)
+
+        # A daemon worker is the Windows-safe timeout mechanism: it avoids killing the process,
+        # but prevents the worker thread from delaying process shutdown.
+        worker_thread = threading.Thread(target=worker, daemon=True)
+        worker_thread.start()
+        worker_thread.join(budget)
+
+        if worker_thread.is_alive():
+            record["analysis_status"] = "failed"
+            record["failure_reason"] = "timeout"
+            record["warnings"] = ["Androguard analysis exceeded the time budget."]
+            return _finalize_record(record)
+
+        try:
+            outcome = result_queue.get_nowait()
+        except Exception:
+            return _failed_record(job_id, claimed_filename, "analysis_error", "Analysis failed unexpectedly.")
+
+        if isinstance(outcome, BaseException):
+            record["analysis_status"] = "failed"
+            record["failure_reason"] = "analysis_error"
+            record["warnings"] = ["Analysis failed unexpectedly."]
+            return _finalize_record(record)
+        return _finalize_record(outcome)
+    except BaseException:
+        return _failed_record(job_id, None, "analysis_error", "Analysis failed unexpectedly.")

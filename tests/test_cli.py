@@ -70,9 +70,31 @@ def test_cli_benign_sample_suppresses_androguard_logs(tmp_path):
     assert result.returncode == 0
     assert output.exists()
     Draft202012Validator(SCHEMA).validate(json.loads(output.read_text(encoding="utf-8")))
+    assert result.stdout == ""
+    assert result.stderr == ""
     assert len(combined_output) < 2_000
-    assert len(combined_output.splitlines()) <= 1
     assert not re.search(
         r"(?m)^\d{4}-\d{2}-\d{2}.*\b(?:DEBUG|WARNING)\b",
         combined_output,
     )
+
+    verbose_result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "sg_analysis.cli",
+            "--input",
+            str(apks[0]),
+            "--job-id",
+            str(uuid.uuid4()),
+            "--out",
+            str(tmp_path / "verbose-findings.json"),
+            "--verbose",
+        ],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+    )
+    assert verbose_result.returncode == 0
+    assert verbose_result.stdout == ""
+    assert verbose_result.stderr.splitlines() == ["Analysis status: ok"]

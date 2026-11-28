@@ -23,6 +23,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--input", required=True)
     parser.add_argument("--job-id")
     parser.add_argument("--out", required=True)
+    parser.add_argument("--verbose", action="store_true")
     args = parser.parse_args(argv)
 
     job_id = args.job_id or str(uuid.uuid4())
@@ -34,7 +35,7 @@ def main(argv: list[str] | None = None) -> int:
             "job_id": job_id if _valid_job_id(job_id) else str(uuid.uuid4()),
             "analysis_version": "v1.0",
             "analysis_status": "failed",
-            "failure_reason": "invalid_apk",
+            "failure_reason": "analysis_error",
             "file": {"sha256": "0" * 64, "size_bytes": 0, "detected_type": "unknown", "claimed_filename": None},
             "app": {"label": None, "package_name": None, "version_name": None, "min_sdk": None, "target_sdk": None},
             "certificate": {"signed": None, "sha256_fingerprints": [], "subject": None, "self_signed": None, "debug_cert": None},
@@ -62,16 +63,17 @@ def main(argv: list[str] | None = None) -> int:
         schema = json.load(handle)
     Draft202012Validator(schema).validate(record)
 
+    if args.verbose:
+        print(f"Analysis status: {record['analysis_status']}", file=sys.stderr)
+
     if record["analysis_status"] == "ok":
-        print("Analysis status: ok")
         return 0
     if record["failure_reason"] == "timeout":
-        print("Analysis status: failed")
         return 3
     if record["failure_reason"] == "unpack_limit":
-        print("Analysis status: failed")
         return 4
-    print(f"Analysis status: {record['analysis_status']}")
+    if record["failure_reason"] == "analysis_error":
+        return 1
     return 2
 
 
