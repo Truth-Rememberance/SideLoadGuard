@@ -47,7 +47,7 @@ def walk_strings(value):
 
 def test_fixture_count_and_unique_identity():
     files = fixture_files()
-    assert len(files) == 8
+    assert len(files) == 10
 
     job_ids = set()
     sha256_values = set()
@@ -137,7 +137,7 @@ def test_failed_and_partial_invariants(fixture_path):
         assert failure_reason is None
     else:
         assert status in {"partial", "failed"}
-        assert failure_reason in {"packed_obfuscated", "invalid_apk", "timeout", "unpack_limit"}
+        assert failure_reason in {"packed_obfuscated", "invalid_apk", "timeout", "unpack_limit", "analysis_error"}
 
 
 @pytest.fixture(scope="module")
@@ -257,6 +257,55 @@ def test_positive_optional_filename_and_null_compatibility(schema, benign_record
     record["certificate"]["debug_cert"] = None
     record["certificate"]["sha256_fingerprints"] = []
     Draft202012Validator(schema).validate(record)
+
+
+def test_package_name_length_boundaries(schema, benign_record):
+    record = copy.deepcopy(benign_record)
+    record["app"]["package_name"] = "p" * 256
+    Draft202012Validator(schema).validate(record)
+
+    record["app"]["package_name"] = "p" * 300
+    assert_rejected(schema, record)
+
+
+def test_string_field_length_boundaries(schema, benign_record):
+    cases = [
+        ("app", "version_name", "v", 256),
+        ("certificate", "subject", "s", 500),
+        ("indicators", "urls", "u", 2048),
+        ("indicators", "domains", "d", 253),
+        ("indicators", "cloud_endpoints", "c", 2048),
+    ]
+    for section, field, character, maximum in cases:
+        record = copy.deepcopy(benign_record)
+        value = character * maximum
+        record[section][field] = [value] if section == "indicators" else value
+        Draft202012Validator(schema).validate(record)
+
+        record[section][field] = [value + character] if section == "indicators" else value + character
+        assert_rejected(schema, record)
+
+
+def test_extra_features_only_allow_numbers_and_booleans(schema, benign_record):
+    for value in (0.25, True):
+        record = copy.deepcopy(benign_record)
+        record["features"]["r2_extension"] = value
+        Draft202012Validator(schema).validate(record)
+
+    for value in ("enabled", None, {}, []):
+        record = copy.deepcopy(benign_record)
+        record["features"]["r2_extension"] = value
+        assert_rejected(schema, record)
+
+
+def test_analysis_error_failure_reason_invariant(schema, benign_record):
+    record = copy.deepcopy(benign_record)
+    record["analysis_status"] = "failed"
+    record["failure_reason"] = "analysis_error"
+    Draft202012Validator(schema).validate(record)
+
+    record["analysis_status"] = "ok"
+    assert_rejected(schema, record)
 
 
 def test_all_fixture_strings_reject_bot_tokens():

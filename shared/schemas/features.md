@@ -2,6 +2,8 @@
 
 v0.1 draft, pending R2 wish list
 
+The schema requires the existing feature keys and their defined types. Additional feature keys are allowed for R2; each additional value must be a number or boolean, and R2 must document every extra key here.
+
 | Name | Type | Meaning | Computed from the Findings Record |
 |---|---|---|---|
 | num_requested_permissions | number | Number of requested Android permissions | Length of `permissions.requested` |

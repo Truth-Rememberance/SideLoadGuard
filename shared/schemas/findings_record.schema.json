@@ -46,7 +46,7 @@
     "failure_reason": {
       "description": "A machine-readable reason for partial or failed analysis, or null.",
       "type": ["string", "null"],
-      "enum": [null, "packed_obfuscated", "invalid_apk", "timeout", "unpack_limit"]
+      "enum": [null, "packed_obfuscated", "invalid_apk", "timeout", "unpack_limit", "analysis_error"]
     },
     "file": {
       "description": "File identity and detected type.",
@@ -108,6 +108,7 @@
             {"type": "null"},
             {
               "type": "string",
+              "maxLength": 256,
               "not": {"pattern": "[0-9]+:[A-Za-z0-9_-]{30,}"}
             }
           ]
@@ -119,6 +120,7 @@
             {"type": "null"},
             {
               "type": "string",
+              "maxLength": 256,
               "not": {"pattern": "[0-9]+:[A-Za-z0-9_-]{30,}"}
             }
           ]
@@ -161,6 +163,7 @@
             {"type": "null"},
             {
               "type": "string",
+              "maxLength": 500,
               "not": {"pattern": "[0-9]+:[A-Za-z0-9_-]{30,}"}
             }
           ]
@@ -224,10 +227,10 @@
       "additionalProperties": false,
       "required": ["urls", "domains", "ip_addresses", "cloud_endpoints", "token_hashes"],
       "properties": {
-        "urls": {"description": "Defanged or sanitized hardcoded URLs.", "type": "array", "items": {"description": "One defanged URL.", "type": "string", "not": {"pattern": "[0-9]+:[A-Za-z0-9_-]{30,}"}}},
-        "domains": {"description": "Sanitized domains found in the app.", "type": "array", "items": {"description": "One sanitized domain.", "type": "string", "not": {"pattern": "[0-9]+:[A-Za-z0-9_-]{30,}"}}},
+        "urls": {"description": "Defanged or sanitized hardcoded URLs.", "type": "array", "items": {"description": "One defanged URL.", "type": "string", "maxLength": 2048, "not": {"pattern": "[0-9]+:[A-Za-z0-9_-]{30,}"}}},
+        "domains": {"description": "Sanitized domains found in the app.", "type": "array", "items": {"description": "One sanitized domain.", "type": "string", "maxLength": 253, "not": {"pattern": "[0-9]+:[A-Za-z0-9_-]{30,}"}}},
         "ip_addresses": {"description": "IP addresses found in the app.", "type": "array", "items": {"description": "One IP address.", "type": "string", "not": {"pattern": "[0-9]+:[A-Za-z0-9_-]{30,}"}}},
-        "cloud_endpoints": {"description": "Sanitized cloud endpoints found in the app.", "type": "array", "items": {"description": "One cloud endpoint.", "type": "string", "not": {"pattern": "[0-9]+:[A-Za-z0-9_-]{30,}"}}},
+        "cloud_endpoints": {"description": "Sanitized cloud endpoints found in the app.", "type": "array", "items": {"description": "One cloud endpoint.", "type": "string", "maxLength": 2048, "not": {"pattern": "[0-9]+:[A-Za-z0-9_-]{30,}"}}},
         "token_hashes": {
           "description": "SHA-256 hashes of detected tokens; raw tokens are prohibited.",
           "type": "array",
@@ -333,7 +336,7 @@
     "features": {
       "description": "Flat numeric and boolean feature map consumed by R2.",
       "type": "object",
-      "additionalProperties": false,
+      "additionalProperties": {"type": ["number", "boolean"]},
       "required": [
         "num_requested_permissions",
         "num_dangerous_permissions",
@@ -404,7 +407,7 @@
     {
       "if": {"properties": {"analysis_status": {"enum": ["partial", "failed"]}}, "required": ["analysis_status"]},
       "then": {
-        "properties": {"failure_reason": {"enum": ["packed_obfuscated", "invalid_apk", "timeout", "unpack_limit"], "type": "string"}},
+        "properties": {"failure_reason": {"enum": ["packed_obfuscated", "invalid_apk", "timeout", "unpack_limit", "analysis_error"], "type": "string"}},
         "required": ["failure_reason"]
       }
     }
