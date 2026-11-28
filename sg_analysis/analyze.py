@@ -9,11 +9,22 @@ import threading
 import uuid
 from pathlib import Path
 from queue import Queue
-from typing import Any
+from typing import Any, Callable
 
 from androguard.core.apk import APK
 
+from sg_analysis.indicators import (
+    MAX_INDICATOR_ITEMS,
+    extract_cloud_endpoints,
+    extract_domains,
+    extract_ip_addresses,
+    extract_urls,
+    find_and_hash_tokens,
+    prefilter_strings,
+    redact_tokens,
+)
 from sg_analysis.intake import validate_intake
+from sg_analysis.strings import collect_strings
 
 
 ANALYSIS_VERSION = "v1.0"
@@ -152,7 +163,7 @@ def _safe_int(value: Any) -> int | None:
         return None
 
 
-def _certificate_summary(apk: APK) -> tuple[dict, list[str]]:
+def _certificate_summary(apk: APK, sanitize: Callable[[str], str]) -> tuple[dict, list[str]]:
     warnings: list[str] = []
     try:
         certificates = apk.get_certificates()
@@ -175,6 +186,8 @@ def _certificate_summary(apk: APK) -> tuple[dict, list[str]]:
         try:
             native = certificate.subject.native
             subject_text = ", ".join(f"{key}={value}" for key, value in native.items()) if native else None
+            if subject_text is not None:
+                subject_text = sanitize(subject_text)
         except Exception:
             subject_text = None
             warnings.append("Certificate subject extraction failed.")
@@ -278,32 +291,76 @@ def _extract(apk_path: str, record: dict) -> dict:
     """Run one Androguard extraction pass."""
     apk = APK(apk_path)
     warnings: list[str] = []
+    analysis_error = False
+    cap_hit = False
+    token_cap_hit = False
+    token_hashes: set[str] = set()
+
+    def sanitize(value: Any) -> str | None:
+        nonlocal cap_hit, token_cap_hit
+        if not isinstance(value, str):
+            return None
+        hashes = find_and_hash_tokens([value], MAX_INDICATOR_ITEMS + 1)
+        for token_hash in hashes:
+            if token_hash not in token_hashes:
+                if len(token_hashes) >= MAX_INDICATOR_ITEMS:
+                    cap_hit = True
+                    token_cap_hit = True
+                else:
+                    token_hashes.add(token_hash)
+        return redact_tokens(value)
+
+    string_extraction_failed = False
+    try:
+        strings, collected_hashes, strings_capped, tokens_capped = collect_strings(apk)
+        token_hashes.update(collected_hashes[:MAX_INDICATOR_ITEMS])
+        cap_hit = strings_capped or tokens_capped
+        token_cap_hit = tokens_capped
+        if strings_capped:
+            warnings.append("String scan limit reached.")
+        if tokens_capped:
+            warnings.append("Indicator item cap reached: token_hashes.")
+    except Exception:
+        strings = []
+        string_extraction_failed = True
+        analysis_error = True
+        warnings.append("String extraction failed.")
 
     try:
-        record["app"]["package_name"] = apk.get_package() or None
+        record["app"]["package_name"] = sanitize(apk.get_package())
     except Exception:
+        analysis_error = True
         warnings.append("Package extraction failed.")
     try:
-        record["app"]["label"] = apk.get_app_name() or None
+        record["app"]["label"] = sanitize(apk.get_app_name())
     except Exception:
+        analysis_error = True
         warnings.append("Label extraction failed.")
     try:
-        record["app"]["version_name"] = apk.get_androidversion_name() or None
+        record["app"]["version_name"] = sanitize(apk.get_androidversion_name())
     except Exception:
+        analysis_error = True
         warnings.append("Version extraction failed.")
     try:
         record["app"]["min_sdk"] = _safe_int(apk.get_min_sdk_version())
     except Exception:
+        analysis_error = True
         warnings.append("Minimum SDK extraction failed.")
     try:
         record["app"]["target_sdk"] = _safe_int(apk.get_target_sdk_version())
     except Exception:
+        analysis_error = True
         warnings.append("Target SDK extraction failed.")
 
     try:
-        requested = sorted(set(apk.get_permissions()))
+        requested = sorted({
+            safe_permission
+            for permission in apk.get_permissions()
+            if (safe_permission := sanitize(permission)) is not None
+        })
     except Exception:
         requested = []
+        analysis_error = True
         warnings.append("Permission extraction failed.")
     record["permissions"]["requested"] = requested
     record["permissions"]["dangerous"] = sorted(permission for permission in requested if permission in DANGEROUS_PERMISSIONS)
@@ -311,15 +368,72 @@ def _extract(apk_path: str, record: dict) -> dict:
     components, component_warnings = _manifest_components(apk, requested)
     record["components"] = components
     warnings.extend(component_warnings)
+    analysis_error = analysis_error or bool(component_warnings)
 
-    certificate, certificate_warnings = _certificate_summary(apk)
+    certificate, certificate_warnings = _certificate_summary(apk, sanitize)
     record["certificate"] = certificate
     warnings.extend(certificate_warnings)
+    analysis_error = analysis_error or bool(certificate_warnings)
 
+    if token_cap_hit and "Indicator item cap reached: token_hashes." not in warnings:
+        warnings.append("Indicator item cap reached: token_hashes.")
+
+    indicators = {
+        "urls": [],
+        "domains": [],
+        "ip_addresses": [],
+        "cloud_endpoints": [],
+        "token_hashes": [],
+    }
+    if not string_extraction_failed:
+        try:
+            indicator_strings, prefilter_capped = prefilter_strings(strings)
+            if prefilter_capped and "String scan limit reached." not in warnings:
+                warnings.append("String scan limit reached.")
+                cap_hit = True
+            extra_limit = MAX_INDICATOR_ITEMS + 1
+            urls = extract_urls(indicator_strings, max_items=extra_limit, prefiltered=True)
+            ip_addresses = extract_ip_addresses(
+                indicator_strings, max_items=extra_limit, prefiltered=True
+            )
+            cloud_endpoints = extract_cloud_endpoints(
+                indicator_strings, max_items=extra_limit, prefiltered=True
+            )
+            domains = extract_domains(urls + cloud_endpoints, max_items=extra_limit)
+            candidates = {
+                "urls": urls,
+                "domains": domains,
+                "ip_addresses": ip_addresses,
+                "cloud_endpoints": cloud_endpoints,
+                "token_hashes": sorted(token_hashes),
+            }
+            for field, values in candidates.items():
+                if len(values) > MAX_INDICATOR_ITEMS:
+                    warnings.append(f"Indicator item cap reached: {field}.")
+                    cap_hit = True
+                indicators[field] = values[:MAX_INDICATOR_ITEMS]
+        except Exception:
+            warnings.append("Indicator extraction failed.")
+            analysis_error = True
+            indicators = {
+                "urls": [],
+                "domains": [],
+                "ip_addresses": [],
+                "cloud_endpoints": [],
+                "token_hashes": [],
+            }
+    record["indicators"] = indicators
+
+    # RULE EXTENSION POINT: future rule evaluation belongs after indicator extraction.
     record["warnings"] = warnings
     record["features"] = compute_features(record)
     record["analysis_status"] = "partial" if warnings else "ok"
-    record["failure_reason"] = "analysis_error" if warnings else None
+    if analysis_error:
+        record["failure_reason"] = "analysis_error"
+    elif cap_hit:
+        record["failure_reason"] = "unpack_limit"
+    else:
+        record["failure_reason"] = None
     return record
 
 
@@ -352,6 +466,14 @@ def _finalize_record(record: dict) -> dict:
                     truncated_fields.append(field)
 
     record["warnings"].extend(f"{field} truncated" for field in truncated_fields)
+    record["permissions"]["requested"] = sorted(set(record["permissions"]["requested"]))
+    record["permissions"]["dangerous"] = sorted(set(record["permissions"]["dangerous"]))
+    record["certificate"]["sha256_fingerprints"] = sorted(
+        set(record["certificate"]["sha256_fingerprints"])
+    )
+    for field in ("urls", "domains", "ip_addresses", "cloud_endpoints", "token_hashes"):
+        record["indicators"][field] = sorted(set(record["indicators"][field]))
+    record["warnings"] = sorted(set(record["warnings"]))
     record["features"] = compute_features(record)
     return record
 
